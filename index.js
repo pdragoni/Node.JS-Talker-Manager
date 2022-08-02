@@ -39,3 +39,15 @@ app.get('/talker', async (request, response) => {
   }
   return response.status(200).json(talkers);
 });
+
+// Cria o endpoint para talker/:id
+app.get('/talker/:id', async (request, response) => {
+  const { id } = request.params;
+  const talkers = await getTalkers();
+  const talker = talkers.find((t) => t.id === Number(id));
+  console.log(talker);
+  if (!talker) {
+  return response.status(404).json({ message: 'Pessoa palestrante não encontrada' });
+}
+  return response.status(200).json(talker); 
+});
