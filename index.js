@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs').promises;
 const bodyParser = require('body-parser');
+const crypto = require('crypto');
 
 const TALKERS_JSON = './talker.json';
 
@@ -51,4 +52,30 @@ app.get('/talker/:id', async (request, response) => {
   return response.status(ID_NOT_FOUND).json({ message: 'Pessoa palestrante não encontrada' });
 }
   return response.status(HTTP_OK_STATUS).json(talker); 
+});
+
+// valida os inputs do usuário
+function validateInputs(req, res, next) {
+  const SIX = 6;
+  const { email, password } = req.body;
+  const regexValidation = /\S+@\S+\.\S+/i;
+  if (!email) return res.status(400).json({ message: 'O campo "email" é obrigatório' });
+  if (!regexValidation.test(email)) { 
+    return res.status(400).json({
+    message: 'O "email" deve ter o formato "email@email.com"',
+    });
+  }
+  if (!password) return res.status(400).json({ message: 'O campo "password" é obrigatório' });
+  if (password.length < SIX) {
+    return res.status(400).json({ message: 'O "password" deve ter pelo menos 6 caracteres' });
+  }
+next();
+}
+
+// Cria o  endpoint para /login
+app.post('/login', validateInputs, (_req, res) => {
+  const token = crypto.randomBytes(8).toString('hex');
+  if (validateInputs && token) {
+    return res.status(HTTP_OK_STATUS).json({ token });
+  }
 });
