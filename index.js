@@ -4,6 +4,9 @@ const bodyParser = require('body-parser');
 const crypto = require('crypto');
 
 const TALKERS_JSON = './talker.json';
+const validateInputs = require('./middlewares/validateInputs');
+const authToken = require('./middlewares/authToken');
+const { validateName, validateAge, validateTalk } = require('./middlewares/validateNewTalker');
 
 const app = express();
 app.use(bodyParser.json());
@@ -27,55 +30,48 @@ app.listen(PORT, () => {
 const getTalkers = async () => {
   try {
     const data = await fs.readFile(TALKERS_JSON, 'utf-8');
-    const talkers = JSON.parse(data); // transforma em objeto javascript e retorna na linha abaixo
+    const talkers = JSON.parse(data); // transforma em array javascript e retorna na linha abaixo
     return talkers;
   } catch (error) {
     return console.log('erro');
   }
 };
 
-app.get('/talker', async (request, response) => {
+app.get('/talker', async (_req, res) => {
   const talkers = await getTalkers();
   if (!talkers || talkers.length === 0) {
-    return response.status(HTTP_OK_STATUS).json([]);
+    return res.status(HTTP_OK_STATUS).json([]);
   }
-  return response.status(HTTP_OK_STATUS).json(talkers);
+  return res.status(HTTP_OK_STATUS).json(talkers);
 });
 
 // Cria o endpoint para talker/:id
-app.get('/talker/:id', async (request, response) => {
-  const { id } = request.params;
+app.get('/talker/:id', async (req, res) => {
+  const { id } = req.params;
   const talkers = await getTalkers();
   const talker = talkers.find((t) => t.id === Number(id));
   console.log(talker);
   if (!talker) {
-  return response.status(ID_NOT_FOUND).json({ message: 'Pessoa palestrante não encontrada' });
+  return res.status(ID_NOT_FOUND).json({ message: 'Pessoa palestrante não encontrada' });
 }
-  return response.status(HTTP_OK_STATUS).json(talker); 
+  return res.status(HTTP_OK_STATUS).json(talker); 
 });
-
-// valida os inputs do usuário
-function validateInputs(req, res, next) {
-  const SIX = 6;
-  const { email, password } = req.body;
-  const regexValidation = /\S+@\S+\.\S+/i;
-  if (!email) return res.status(400).json({ message: 'O campo "email" é obrigatório' });
-  if (!regexValidation.test(email)) { 
-    return res.status(400).json({
-    message: 'O "email" deve ter o formato "email@email.com"',
-    });
-  }
-  if (!password) return res.status(400).json({ message: 'O campo "password" é obrigatório' });
-  if (password.length < SIX) {
-    return res.status(400).json({ message: 'O "password" deve ter pelo menos 6 caracteres' });
-  }
-next();
-}
 
 // Cria o  endpoint para /login
 app.post('/login', validateInputs, (_req, res) => {
   const token = crypto.randomBytes(8).toString('hex');
-  if (validateInputs && token) {
+  if (token) {
     return res.status(HTTP_OK_STATUS).json({ token });
   }
+});
+
+// Cria o endpoint /talker
+app.post('/talker', authToken, validateName, validateAge, validateTalk, async (req, res) => {
+  const talkers = await getTalkers();
+  const id = talkers.length + 1; // id do novo talker
+  const { name, age, talk: { watchedAt, rate } } = req.body;
+  const newTalker = { name, age, id, talk: { watchedAt, rate } };
+  talkers.push(newTalker);
+  await fs.writeFile(TALKERS_JSON, JSON.stringify(talkers));
+  return res.status(201).json(newTalker);
 });
