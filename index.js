@@ -58,7 +58,7 @@ app.get('/talker/:id', async (req, res) => {
   if (!talker) {
   return res.status(ID_NOT_FOUND).json({ message: 'Pessoa palestrante não encontrada' });
 }
-  return res.status(HTTP_OK_STATUS).json(talker); 
+  return res.status(HTTP_OK_STATUS).json(talker);
 });
 
 // Cria o  endpoint para /login
@@ -70,7 +70,7 @@ app.post('/login', validateInputs, (_req, res) => {
 });
 
 // Cria o endpoint /talker
-app.post('/talker', 
+app.post('/talker',
     authToken, validateName, validateAge, verifyTalk, validateWatchedAt, validateRate,
     async (req, res) => {
   const talkers = await getTalkers();
@@ -80,4 +80,17 @@ app.post('/talker',
   talkers.push(newTalker);
   await fs.writeFile(TALKERS_JSON, JSON.stringify(talkers));
   return res.status(201).json(newTalker);
+});
+
+// 6 - Crie o endpoint PUT /talker/:id
+app.put('/talker/:id',
+  authToken, validateName, validateAge, verifyTalk, validateWatchedAt, validateRate,
+  async (req, res) => {
+  const { id } = req.params;
+  const talkers = await getTalkers();
+  const talker = talkers.findIndex((person) => person.id === Number(id));
+  talkers[talker] = { ...talkers[talker], ...req.body };
+  // const { name, age, talk: { watchedAt, rate } } = talker;
+  await fs.writeFile(TALKERS_JSON, JSON.stringify(talkers));
+  return res.status(200).json(talkers[talker]);
 });
