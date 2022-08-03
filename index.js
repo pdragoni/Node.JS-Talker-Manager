@@ -6,7 +6,11 @@ const crypto = require('crypto');
 const TALKERS_JSON = './talker.json';
 const validateInputs = require('./middlewares/validateInputs');
 const authToken = require('./middlewares/authToken');
-const { validateName, validateAge, validateTalk } = require('./middlewares/validateNewTalker');
+const { validateName,
+  validateAge,
+  verifyTalk,
+  validateWatchedAt,
+  validateRate } = require('./middlewares/validateNewTalker');
 
 const app = express();
 app.use(bodyParser.json());
@@ -66,7 +70,9 @@ app.post('/login', validateInputs, (_req, res) => {
 });
 
 // Cria o endpoint /talker
-app.post('/talker', authToken, validateName, validateAge, validateTalk, async (req, res) => {
+app.post('/talker', 
+    authToken, validateName, validateAge, verifyTalk, validateWatchedAt, validateRate,
+    async (req, res) => {
   const talkers = await getTalkers();
   const id = talkers.length + 1; // id do novo talker
   const { name, age, talk: { watchedAt, rate } } = req.body;
