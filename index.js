@@ -94,3 +94,28 @@ app.put('/talker/:id',
   await fs.writeFile(TALKERS_JSON, JSON.stringify(talkers));
   return res.status(200).json(talkers[talker]);
 });
+
+// 7 - 
+app.delete('/talker/:id',
+  authToken,
+  // validateName, validateAge, verifyTalk, validateWatchedAt, validateRate,
+  async (req, res) => {
+  const { id } = req.params;
+  const talkers = await getTalkers();
+  const talker = talkers.findIndex((r) => r.id === Number(id));
+  await fs.writeFile(TALKERS_JSON, JSON.stringify(talker));
+  return res.status(204).end();
+});
+
+/*
+app.delete('/recipes/:id', function (req, res) {
+  const { id } = req.params;
+  const recipeIndex = recipes.findIndex((r) => r.id === Number(id));
+
+  if (!recipeIndex === -1) return res.status(404).json({ message: 'Recipe not found!' });
+
+  recipes.splice(recipeIndex, 1);
+
+  res.status(204).end();
+});
+*/
