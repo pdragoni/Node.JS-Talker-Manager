@@ -37,10 +37,20 @@ const getTalkers = async () => {
     const talkers = JSON.parse(data); // transforma em array javascript e retorna na linha abaixo
     return talkers;
   } catch (error) {
-    return console.log('erro');
+    return [];
   }
 };
 
+// 8 - 
+app.get('/talker/search', authToken, async (req, res) => {
+const { q } = req.query;
+  const talkers = await getTalkers();
+  const talker = talkers.filter((t) => t.name.includes(q));
+  if (!talker) return res.status(200).json(talkers);
+  return res.status(200).json(talker);
+});
+
+// 1 -
 app.get('/talker', async (_req, res) => {
   const talkers = await getTalkers();
   if (!talkers || talkers.length === 0) {
@@ -103,19 +113,6 @@ app.delete('/talker/:id',
   const { id } = req.params;
   const talkers = await getTalkers();
   const talker = talkers.findIndex((r) => r.id === Number(id));
-  await fs.writeFile(TALKERS_JSON, JSON.stringify(talker));
+  await fs.writeFile(TALKERS_JSON, JSON.stringify(talker, null, 2));
   return res.status(204).end();
 });
-
-/*
-app.delete('/recipes/:id', function (req, res) {
-  const { id } = req.params;
-  const recipeIndex = recipes.findIndex((r) => r.id === Number(id));
-
-  if (!recipeIndex === -1) return res.status(404).json({ message: 'Recipe not found!' });
-
-  recipes.splice(recipeIndex, 1);
-
-  res.status(204).end();
-});
-*/
